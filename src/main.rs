@@ -1,5 +1,5 @@
 use sfml::{
-    graphics::{CircleShape, Color, Font, RenderTarget, RenderWindow, Text, Transformable},
+    graphics::{CircleShape, Color, Font, RenderTarget, RenderWindow, Shape, Text, Transformable},
     system::Vector2f,
     window::{
         ContextSettings, Event, Key, Style,
@@ -12,8 +12,11 @@ fn update_star_positions(stars: &[Star], star_circles: &mut [CircleShape], view:
     for (star, star_circle) in stars.iter().zip(star_circles) {
         let pos: Vector2f = sterejec(&star, &view).into();
 
-        star_circle
-            .set_position(pos * 500. * (2_f32).powf(view.zoom()) + Vector2f::new(500., 500.));
+        let zoom = (2_f32).powf(view.zoom());
+
+        star_circle.set_position(pos * 500. * zoom + Vector2f::new(500., 500.));
+
+        star_circle.set_radius(star.graphical_size() * zoom);
     }
 }
 
@@ -32,7 +35,7 @@ fn main() {
     )
     .unwrap();
 
-    window.set_vertical_sync_enabled(true);
+    window.set_framerate_limit(30);
 
     let stars: Vec<Star> = {
         let mut s: Vec<Star> = serde_json::from_str(include_str!("../assets/ybsc5.json")).unwrap();
@@ -48,6 +51,10 @@ fn main() {
     for star in stars.iter() {
         let mut c = CircleShape::new(star.graphical_size(), 24);
         c.set_origin(c.radius());
+
+        if let Some(color) = star.graphical_color() {
+            c.set_fill_color(color);
+        }
 
         star_circles.push(c);
     }
@@ -127,21 +134,25 @@ fn main() {
             .filter(|((c, _), _)| {
                 let pos = c.position();
 
-                pos.x > 0. && pos.x < 1000. && pos.y > 0. && pos.y < 1000.
+                pos.x > -2. * c.radius()
+                    && pos.x < 1000. + c.radius()
+                    && pos.y > -2. * c.radius()
+                    && pos.y < 1000. + c.radius()
             })
         {
             window.draw(s);
 
-            if star.vmag > view.zoom() + 2.5 {
+            if star.vmag > (view.zoom() + 2.5).max(2.) {
                 // skip name
                 continue;
             }
 
             text.set_string(name);
 
-            let mut position = s.position();
-            position.x -= text.global_bounds().width * 0.5;
-            position.y += 10.;
+            let mut position = s.position() + s.radius().into();
+            let bounds = text.local_bounds();
+            position.x -= bounds.width * 0.5;
+            position.y += s.radius() + bounds.height * 0.5;
             text.set_position((position.x.round_ties_even(), position.y.round_ties_even()));
 
             window.draw(&text);

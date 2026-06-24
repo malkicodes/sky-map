@@ -1,5 +1,7 @@
 use arrayvec::ArrayString;
+use phf::phf_ordered_map;
 use serde::{Deserialize, Serialize};
+use sfml::graphics::Color;
 use std::{
     fmt::{Display, Write},
     str::FromStr,
@@ -24,6 +26,7 @@ pub struct Star {
     pub dec: f64,
 
     pub vmag: f32,
+    pub spectral_type: ArrayString<2>,
 }
 
 impl Star {
@@ -56,12 +59,75 @@ impl Star {
         (MULTIPLIER * FALLOFF.powf(self.vmag)).max(MIN_SIZE)
     }
 
+    pub fn graphical_color(&self) -> Option<Color> {
+        let temperature = spectral_to_temperature(self.spectral_type)?;
+
+        // https://tannerhelland.com/2012/09/18/convert-temperature-rgb-algorithm-code.html
+
+        let temp = temperature / 100.;
+
+        let red = if temp <= 66. {
+            255
+        } else {
+            (329.698727446 * (temp - 60.).powf(-0.1332047592))
+                .clamp(0., 255.)
+                .round() as u8
+        };
+
+        let green = if temp <= 66. {
+            (99.4708025861 * temp.ln() - 161.1195681661)
+                .clamp(0., 255.)
+                .round() as u8
+        } else {
+            (288.1221695283 * ((temp - 60.).powf(-0.0755148492)))
+                .clamp(0., 255.)
+                .round() as u8
+        };
+
+        let blue = if temp >= 66. {
+            255
+        } else if temp <= 19. {
+            0
+        } else {
+            (138.5177312231 * (temp - 10.).ln() - 305.0447927307)
+                .clamp(0., 255.)
+                .round() as u8
+        };
+
+        Some(Color::rgb(red, green, blue))
+    }
+
     pub fn spherical_coordinates(&self) -> (f64, f64) {
         (
             self.ra * std::f64::consts::PI / 12.,
             self.dec * std::f64::consts::PI / 180.,
         )
     }
+}
+
+static SPECTRAL_TEMPERATURES: phf::OrderedMap<char, f32> = phf_ordered_map! {
+    // https://astro.unl.edu/naap/hr/hr_background1.html
+    'O' => 40000.,
+    'B' => 20000.,
+    'A' => 10000.,
+    'F' => 7500.,
+    'G' => 5500.,
+    'K' => 4000.,
+    'M' => 3000.,
+};
+
+fn spectral_to_temperature(spectral_type: ArrayString<2>) -> Option<f32> {
+    let mut c = spectral_type.chars();
+    let letter = c.next()?;
+    let number = c.next()?.to_digit(10)?;
+
+    let start = *(SPECTRAL_TEMPERATURES.get(&letter)?);
+    let end = SPECTRAL_TEMPERATURES
+        .index(SPECTRAL_TEMPERATURES.get_index(&letter)? + 1)
+        .map(|x| *x.1)
+        .unwrap_or(2400.);
+
+    Some(start + (end - start) * (number as f32 / 10.))
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
