@@ -109,8 +109,8 @@ impl Star {
 
     pub fn spherical_coordinates(&self) -> (f64, f64) {
         (
-            self.ra * std::f64::consts::PI / 12.,
             self.dec * std::f64::consts::PI / 180.,
+            self.ra * std::f64::consts::PI / 12.,
         )
     }
 }

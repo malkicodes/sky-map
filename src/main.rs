@@ -1,22 +1,23 @@
 use sfml::{
     graphics::{CircleShape, Color, Font, RenderTarget, RenderWindow, Shape, Text, Transformable},
-    system::Vector2f,
     window::{
         ContextSettings, Event, Key, Style,
         mouse::{Button, Wheel},
     },
 };
-use sky_map::{DisplaySettings, NameSetting, View, star::Star, sterejec};
+use sky_map::{
+    DisplaySettings, NameSetting, SCREEN_SIZE, View, drawables::Grid, star::Star, sterejec,
+    sterejec_to_screen,
+};
 
 fn update_star_positions(stars: &[Star], star_circles: &mut [CircleShape], view: &View) {
     for (star, star_circle) in stars.iter().zip(star_circles) {
-        let pos: Vector2f = sterejec(&star, &view).into();
+        star_circle.set_position(sterejec_to_screen(
+            sterejec(star.spherical_coordinates(), &view),
+            &view,
+        ));
 
-        let zoom = (2_f32).powf(view.zoom());
-
-        star_circle.set_position(pos * 500. * zoom + Vector2f::new(500., 500.));
-
-        star_circle.set_radius(star.graphical_size() * zoom);
+        star_circle.set_radius(star.graphical_size() * view.zoom_v());
     }
 }
 
@@ -37,7 +38,7 @@ fn main() {
         Font::from_memory_static(include_bytes!("../assets/Inter_18pt-Regular.ttf")).unwrap();
 
     let mut window = RenderWindow::new(
-        (1000, 1000),
+        (SCREEN_SIZE, SCREEN_SIZE),
         "Sky Map",
         Style::CLOSE,
         &ContextSettings {
@@ -79,6 +80,7 @@ fn main() {
     eprintln!("Loaded {} stars", stars.len());
 
     let mut text = Text::new("", &font, 12);
+    let mut grid = Grid::new(360).unwrap();
 
     let mut mouse = (0, 0);
     let mut mouse_down = false;
@@ -105,11 +107,11 @@ fn main() {
                     mouse = (x, y);
 
                     if mouse_down {
-                        const SENSITIVITY: f64 = 0.001953125;
+                        const SENSITIVITY: f64 = 1. / 512.;
 
                         view.change_latlng((
                             -deltay as f64 * SENSITIVITY * (0.5_f64).powf(view.zoom() as f64),
-                            -deltax as f64 * SENSITIVITY * (0.5_f64).powf(view.zoom() as f64),
+                            -deltax as f64 * SENSITIVITY * view.zoom_v().recip() as f64,
                         ));
                     }
                 }
@@ -135,7 +137,7 @@ fn main() {
                     ..
                 } => {
                     const WHEEL_SENSITIVITY: f32 = 0.125;
-                    const MIN_ZOOM: f32 = -1.25;
+                    const MIN_ZOOM: f32 = 0.;
 
                     view.set_zoom((view.zoom() + delta * WHEEL_SENSITIVITY).max(MIN_ZOOM));
                 }
@@ -147,6 +149,9 @@ fn main() {
 
         window.clear(Color::BLACK);
 
+        grid.update(&view).unwrap();
+        window.draw(&grid);
+
         for ((s, name), star) in star_circles
             .iter()
             .zip(star_names.iter())
@@ -155,9 +160,9 @@ fn main() {
                 let pos = c.position();
 
                 pos.x > -2. * c.radius()
-                    && pos.x < 1000. + c.radius()
+                    && pos.x < SCREEN_SIZE as f32 + c.radius()
                     && pos.y > -2. * c.radius()
-                    && pos.y < 1000. + c.radius()
+                    && pos.y < SCREEN_SIZE as f32 + c.radius()
             })
         {
             window.draw(s);
@@ -179,11 +184,11 @@ fn main() {
         }
 
         text.set_string(&format!(
-            "Zoom: {:.2}x ({})",
-            2_f32.powf(view.zoom()),
+            "Zoom: {:.2}° ({})",
+            view.zoom_v().recip() * 90.,
             view.zoom() * 8.
         ));
-        text.set_position((0., 1000. - text.global_bounds().height * 2.));
+        text.set_position((0., SCREEN_SIZE as f32 - text.global_bounds().height * 2.));
         window.draw(&text);
 
         window.display();

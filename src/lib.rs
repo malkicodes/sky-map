@@ -1,14 +1,16 @@
 use std::f64::consts::FRAC_PI_2;
 
-use crate::star::Star;
+use sfml::system::Vector2f;
 
+pub mod drawables;
 pub mod star;
 
-pub fn sterejec(star: &Star, view: &View) -> (f32, f32) {
-    let (mut lng, mut lat) = star.spherical_coordinates();
+pub const SCREEN_SIZE: u32 = 1000;
+pub const HALF_SCREEN_SIZE: u32 = 500;
 
-    lat = -lat; // ??
-    lng = -lng;
+pub fn sterejec(pos: (f64, f64), view: &View) -> (f32, f32) {
+    let lat = -pos.0;
+    let lng = -pos.1;
 
     let k = 2.
         / (1.
@@ -22,12 +24,29 @@ pub fn sterejec(star: &Star, view: &View) -> (f32, f32) {
     )
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+pub fn sterejec_to_screen(pos: (f32, f32), view: &View) -> Vector2f {
+    Vector2f::new(pos.0, pos.1) * HALF_SCREEN_SIZE as f32 * view.zoom_v
+        + Vector2f::new(HALF_SCREEN_SIZE as f32, HALF_SCREEN_SIZE as f32)
+}
+
+#[derive(Clone, Copy, Debug)]
 pub struct View {
     o_lat: f64,
     o_lng: f64,
 
     zoom: f32,
+    zoom_v: f32,
+}
+
+impl Default for View {
+    fn default() -> Self {
+        Self {
+            o_lat: 0.,
+            o_lng: 0.,
+            zoom: 1.,
+            zoom_v: 1.,
+        }
+    }
 }
 
 impl View {
@@ -45,8 +64,13 @@ impl View {
         self.zoom
     }
 
+    pub fn zoom_v(&self) -> f32 {
+        self.zoom_v
+    }
+
     pub fn set_zoom(&mut self, v: f32) {
-        self.zoom = v
+        self.zoom = v;
+        self.zoom_v = 2_f32.powf(v) * 0.5;
     }
 }
 
