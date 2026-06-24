@@ -108,7 +108,7 @@ fn main() {
                     ..
                 } => {
                     const WHEEL_SENSITIVITY: f32 = 0.125;
-                    const MIN_ZOOM: f32 = -2.;
+                    const MIN_ZOOM: f32 = -1.25;
 
                     view.set_zoom((view.zoom() + delta * WHEEL_SENSITIVITY).max(MIN_ZOOM));
                 }
@@ -150,7 +150,7 @@ fn main() {
         text.set_string(&format!(
             "Zoom: {:.2}x ({})",
             2_f32.powf(view.zoom()),
-            view.zoom()
+            view.zoom() * 8.
         ));
         text.set_position((0., 1000. - text.global_bounds().height * 2.));
         window.draw(&text);
