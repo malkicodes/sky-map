@@ -167,7 +167,7 @@ fn main() {
         {
             window.draw(s);
 
-            if settings.names() == NameSetting::Hidden || star.vmag > (view.zoom() + 2.5).max(2.) {
+            if settings.names() == NameSetting::Hidden || star.vmag > (view.zoom() + 1.75).max(2.) {
                 // skip name
                 continue;
             }
