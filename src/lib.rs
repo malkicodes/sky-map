@@ -26,6 +26,8 @@ pub fn sterejec(star: &Star, view: &View) -> (f32, f32) {
 pub struct View {
     o_lat: f64,
     o_lng: f64,
+
+    zoom: f32,
 }
 
 impl View {
@@ -37,5 +39,13 @@ impl View {
         self.o_lng += delta.1;
 
         self.o_lat = (self.o_lat + delta.0).clamp(-FRAC_PI_2, FRAC_PI_2);
+    }
+
+    pub fn zoom(&self) -> f32 {
+        self.zoom
+    }
+
+    pub fn set_zoom(&mut self, v: f32) {
+        self.zoom = v
     }
 }
