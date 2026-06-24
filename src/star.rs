@@ -38,6 +38,12 @@ impl Star {
             .unwrap_or_else(|| self.hr_name())
     }
 
+    pub fn bayerflamsteed_name(&self) -> String {
+        self.bayer_name()
+            .or_else(|| self.flamsteed_name())
+            .unwrap_or_else(|| self.hr_name())
+    }
+
     pub fn bayer_name(&self) -> Option<String> {
         self.bayer.as_ref().map(|b| b.to_string())
     }
@@ -49,6 +55,10 @@ impl Star {
 
     pub fn hr_name(&self) -> String {
         format!("HR {}", self.hr)
+    }
+
+    pub fn hd_name(&self) -> String {
+        format!("HD {}", self.hd)
     }
 
     pub fn graphical_size(&self) -> f32 {

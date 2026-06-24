@@ -6,7 +6,7 @@ use sfml::{
         mouse::{Button, Wheel},
     },
 };
-use sky_map::{View, star::Star, sterejec};
+use sky_map::{DisplaySettings, NameSetting, View, star::Star, sterejec};
 
 fn update_star_positions(stars: &[Star], star_circles: &mut [CircleShape], view: &View) {
     for (star, star_circle) in stars.iter().zip(star_circles) {
@@ -17,6 +17,18 @@ fn update_star_positions(stars: &[Star], star_circles: &mut [CircleShape], view:
         star_circle.set_position(pos * 500. * zoom + Vector2f::new(500., 500.));
 
         star_circle.set_radius(star.graphical_size() * zoom);
+    }
+}
+
+fn update_star_names(stars: &[Star], star_names: &mut [String], settings: &DisplaySettings) {
+    for (star, name) in stars.iter().zip(star_names.iter_mut()) {
+        *name = match settings.names() {
+            sky_map::NameSetting::Proper => star.star_name(),
+            sky_map::NameSetting::BayerFlamsteed => star.bayerflamsteed_name(),
+            sky_map::NameSetting::HR => star.hr_name(),
+            sky_map::NameSetting::HD => star.hd_name(),
+            sky_map::NameSetting::Hidden => break,
+        }
     }
 }
 
@@ -37,15 +49,18 @@ fn main() {
 
     window.set_framerate_limit(30);
 
+    let mut view = View::default();
+    let mut settings = DisplaySettings::default();
+
     let stars: Vec<Star> = {
         let mut s: Vec<Star> = serde_json::from_str(include_str!("../assets/ybsc5.json")).unwrap();
         s.sort_by(|a, b| a.vmag.total_cmp(&b.vmag));
 
         s
     };
-    let star_names = stars.iter().map(|s| s.star_name()).collect::<Vec<_>>();
 
-    let mut view = View::default();
+    let mut star_names = vec![String::new(); stars.len()];
+    update_star_names(&stars, &mut star_names, &settings);
 
     let mut star_circles: Vec<CircleShape> = Vec::with_capacity(stars.len());
     for star in stars.iter() {
@@ -80,6 +95,11 @@ fn main() {
                 Event::KeyPressed {
                     code: Key::Num1, ..
                 } => view.set_zoom(0.),
+                Event::KeyPressed { code: Key::N, .. } => {
+                    settings.cycle_names();
+                    println!("{:?}", settings.names());
+                    update_star_names(&stars, &mut star_names, &settings);
+                }
                 Event::MouseMoved { x, y } => {
                     let (deltax, deltay) = (x - mouse.0, y - mouse.1);
                     mouse = (x, y);
@@ -142,7 +162,7 @@ fn main() {
         {
             window.draw(s);
 
-            if star.vmag > (view.zoom() + 2.5).max(2.) {
+            if settings.names() == NameSetting::Hidden || star.vmag > (view.zoom() + 2.5).max(2.) {
                 // skip name
                 continue;
             }

@@ -49,3 +49,34 @@ impl View {
         self.zoom = v
     }
 }
+
+#[derive(Clone, Debug, Default)]
+pub struct DisplaySettings {
+    names: NameSetting,
+}
+
+impl DisplaySettings {
+    pub fn names(&self) -> NameSetting {
+        self.names
+    }
+
+    pub fn cycle_names(&mut self) {
+        self.names = match self.names {
+            NameSetting::Proper => NameSetting::BayerFlamsteed,
+            NameSetting::BayerFlamsteed => NameSetting::HR,
+            NameSetting::HR => NameSetting::HD,
+            NameSetting::HD => NameSetting::Hidden,
+            NameSetting::Hidden => NameSetting::Proper,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub enum NameSetting {
+    #[default]
+    Proper,
+    BayerFlamsteed,
+    HR,
+    HD,
+    Hidden,
+}
