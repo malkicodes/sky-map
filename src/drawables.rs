@@ -1,45 +1,100 @@
-use std::f64::consts::PI;
+use std::{array, f64::consts::PI};
 
 use sfml::{
     cpp::FBox,
     graphics::{Color, Drawable, PrimitiveType, Vertex, VertexBuffer, VertexBufferUsage},
 };
 
-use crate::{View, sterejec, sterejec_to_screen};
+use crate::{DisplaySettings, GridSetting, View, sterejec, sterejec_to_screen};
 
 pub struct Grid {
     horizon_vb: FBox<VertexBuffer>,
-    points: Vec<(f64, f64)>,
-    vertices: Vec<Vertex>,
+    horizon_vertices: [Vertex; 181],
+
+    lng_lines: [(FBox<VertexBuffer>, [Vertex; 181]); 12],
+    lat_lines: [(FBox<VertexBuffer>, [Vertex; 181]); 10],
+
+    setting: GridSetting,
 }
 
 impl Grid {
-    pub fn new(vertex_count: usize) -> sfml::SfResult<Grid> {
-        let vb = VertexBuffer::new(
-            PrimitiveType::LINE_STRIP,
-            vertex_count + 1,
-            VertexBufferUsage::STREAM,
-        )?;
+    const MAJOR_COLOR: Color = Color::rgb(96, 96, 96);
+    const MINOR_COLOR: Color = Color::rgb(64, 64, 64);
 
-        let mut points = Vec::with_capacity(vertex_count + 1);
+    pub fn new() -> sfml::SfResult<Grid> {
+        let vb = VertexBuffer::new(PrimitiveType::LINE_STRIP, 181, VertexBufferUsage::STREAM)?;
 
-        for i in 0..vertex_count + 1 {
-            points.push((0., i as f64 / vertex_count as f64 * 2. * PI));
+        let mut points = [(0., 0.); 181];
+
+        for i in 0..181 {
+            points[i] = (0., i as f64 * PI / 90.);
         }
 
         Ok(Grid {
             horizon_vb: vb,
-            points,
-            vertices: vec![Vertex::default(); vertex_count + 1],
+            horizon_vertices: [Vertex::DEFAULT; 181],
+
+            lng_lines: array::from_fn(|_| {
+                (
+                    VertexBuffer::new(PrimitiveType::LINE_STRIP, 181, VertexBufferUsage::STREAM)
+                        .unwrap(),
+                    [Vertex::DEFAULT; 181],
+                )
+            }),
+            lat_lines: array::from_fn(|_| {
+                (
+                    VertexBuffer::new(PrimitiveType::LINE_STRIP, 181, VertexBufferUsage::STREAM)
+                        .unwrap(),
+                    [Vertex::DEFAULT; 181],
+                )
+            }),
+
+            setting: Default::default(),
         })
     }
 
-    pub fn update(&mut self, view: &View) -> sfml::SfResult<()> {
-        for (v, pos) in self.vertices.iter_mut().zip(self.points.iter().copied()) {
-            *v = Vertex::with_pos_color(sterejec_to_screen(sterejec(pos, view), view), Color::WHITE)
+    pub fn update(&mut self, view: &View, settings: &DisplaySettings) -> sfml::SfResult<()> {
+        for (pos, v) in self.horizon_vertices.iter_mut().enumerate() {
+            *v = Vertex::with_pos_color(
+                sterejec_to_screen(sterejec((0., pos as f64 * PI / 90.), view), view),
+                Self::MAJOR_COLOR,
+            )
         }
 
-        self.horizon_vb.update(&self.vertices, 0)?;
+        self.horizon_vb.update(&self.horizon_vertices, 0)?;
+
+        for (i, (vb, vertices)) in self.lng_lines.iter_mut().enumerate() {
+            let lng = i as f64 * PI / 12.;
+
+            for (pos, v) in vertices.iter_mut().enumerate() {
+                *v = Vertex::with_pos_color(
+                    sterejec_to_screen(sterejec((pos as f64 * PI / 90., lng), view), view),
+                    if i == 0 || i == 6 {
+                        Self::MAJOR_COLOR
+                    } else {
+                        Self::MINOR_COLOR
+                    },
+                );
+            }
+
+            vb.update(vertices, 0)?;
+        }
+
+        for (i, (vb, vertices)) in self.lat_lines.iter_mut().enumerate() {
+            let lat = [75, 60, 45, 30, 15, -15, -30, -45, -60, -75]
+                .map(|theta| theta as f64 * PI / 180.)[i];
+
+            for (pos, v) in vertices.iter_mut().enumerate() {
+                *v = Vertex::with_pos_color(
+                    sterejec_to_screen(sterejec((lat, pos as f64 * PI / 90.), view), view),
+                    Self::MINOR_COLOR,
+                );
+            }
+
+            vb.update(vertices, 0)?;
+        }
+
+        self.setting = settings.grid();
 
         Ok(())
     }
@@ -55,6 +110,23 @@ impl Drawable for Grid {
         target: &mut dyn sfml::graphics::RenderTarget,
         rs: &sfml::graphics::RenderStates<'texture, 'shader, 'shader_texture>,
     ) {
+        if self.setting == GridSetting::None {
+            return;
+        }
+
         target.draw_vertex_buffer(&self.horizon_vb, rs);
+
+        match self.setting {
+            GridSetting::None | GridSetting::Horizon => return,
+            GridSetting::Major => {
+                target.draw_vertex_buffer(&self.lng_lines[0].0, rs);
+                target.draw_vertex_buffer(&self.lng_lines[6].0, rs);
+            }
+            GridSetting::MajorMinor => {
+                for (vb, _) in self.lng_lines.iter().chain(self.lat_lines.iter()) {
+                    target.draw_vertex_buffer(vb, rs);
+                }
+            }
+        }
     }
 }

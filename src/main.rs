@@ -6,8 +6,8 @@ use sfml::{
     },
 };
 use sky_map::{
-    DisplaySettings, NameSetting, SCREEN_SIZE, View, drawables::Grid, star::Star, sterejec,
-    sterejec_to_screen,
+    DisplaySettings, NameSetting, SCREEN_SIZE, View, drawables::Grid, rad_to_dms, rad_to_hms,
+    star::Star, sterejec, sterejec_to_screen,
 };
 
 fn update_star_positions(stars: &[Star], star_circles: &mut [CircleShape], view: &View) {
@@ -35,7 +35,7 @@ fn update_star_names(stars: &[Star], star_names: &mut [String], settings: &Displ
 
 fn main() {
     let font =
-        Font::from_memory_static(include_bytes!("../assets/Inter_18pt-Regular.ttf")).unwrap();
+        Font::from_memory_static(include_bytes!("../assets/RobotoMono-Regular.ttf")).unwrap();
 
     let mut window = RenderWindow::new(
         (SCREEN_SIZE, SCREEN_SIZE),
@@ -80,7 +80,7 @@ fn main() {
     eprintln!("Loaded {} stars", stars.len());
 
     let mut text = Text::new("", &font, 12);
-    let mut grid = Grid::new(360).unwrap();
+    let mut grid = Grid::new().unwrap();
 
     let mut mouse = (0, 0);
     let mut mouse_down = false;
@@ -99,8 +99,10 @@ fn main() {
                 } => view.set_zoom(0.),
                 Event::KeyPressed { code: Key::N, .. } => {
                     settings.cycle_names();
-                    println!("{:?}", settings.names());
                     update_star_names(&stars, &mut star_names, &settings);
+                }
+                Event::KeyPressed { code: Key::G, .. } => {
+                    settings.cycle_grid();
                 }
                 Event::MouseMoved { x, y } => {
                     let (deltax, deltay) = (x - mouse.0, y - mouse.1);
@@ -110,7 +112,7 @@ fn main() {
                         const SENSITIVITY: f64 = 1. / 512.;
 
                         view.change_latlng((
-                            -deltay as f64 * SENSITIVITY * (0.5_f64).powf(view.zoom() as f64),
+                            -deltay as f64 * SENSITIVITY * view.zoom_v().recip() as f64,
                             -deltax as f64 * SENSITIVITY * view.zoom_v().recip() as f64,
                         ));
                     }
@@ -149,7 +151,7 @@ fn main() {
 
         window.clear(Color::BLACK);
 
-        grid.update(&view).unwrap();
+        grid.update(&view, &settings).unwrap();
         window.draw(&grid);
 
         for ((s, name), star) in star_circles
@@ -183,12 +185,31 @@ fn main() {
             window.draw(&text);
         }
 
+        let (lat, lng) = view.latlng();
+
+        let ra = rad_to_hms(lng as f32);
+        let dec = rad_to_dms(lat as f32);
+
+        text.set_string(&format!("RA:  {:02}h{:02}m{:06.3}s", ra.0, ra.1, ra.2));
+        text.set_position((
+            0.,
+            SCREEN_SIZE as f32 - (text.character_size() * 3) as f32 - 6.,
+        ));
+        window.draw(&text);
+
+        text.set_string(&format!("DC: {:+03}°{:02}'{:06.3}\"", dec.0, dec.1, dec.2));
+        text.set_position((
+            0.,
+            SCREEN_SIZE as f32 - (text.character_size() * 2) as f32 - 4.,
+        ));
+        window.draw(&text);
+
         text.set_string(&format!(
             "Zoom: {:.2}° ({})",
             view.zoom_v().recip() * 90.,
             view.zoom() * 8.
         ));
-        text.set_position((0., SCREEN_SIZE as f32 - text.global_bounds().height * 2.));
+        text.set_position((0., SCREEN_SIZE as f32 - text.character_size() as f32 - 2.));
         window.draw(&text);
 
         window.display();

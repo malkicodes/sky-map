@@ -1,4 +1,4 @@
-use std::f64::consts::FRAC_PI_2;
+use std::{f32::consts::PI, f64::consts::FRAC_PI_2};
 
 use sfml::system::Vector2f;
 
@@ -7,6 +7,26 @@ pub mod star;
 
 pub const SCREEN_SIZE: u32 = 1000;
 pub const HALF_SCREEN_SIZE: u32 = 500;
+
+pub fn rad_to_hms(rad: f32) -> (i16, u16, f32) {
+    let hours = (rad - 2. * PI * (rad / (2. * PI)).floor()) * 12. / PI;
+    let minutes = hours.fract() * 60.;
+    let seconds = minutes.fract() * 60.;
+
+    (hours.floor() as i16, minutes.floor() as u16, seconds)
+}
+
+pub fn rad_to_dms(rad: f32) -> (i16, u16, f32) {
+    let degrees = rad.abs() * 180. / PI;
+    let arcminutes = degrees.fract() * 60.;
+    let arcseconds = arcminutes.fract() * 60.;
+
+    (
+        degrees.floor() as i16 * if rad.is_sign_positive() { -1 } else { 1 },
+        arcminutes.floor() as u16,
+        arcseconds,
+    )
+}
 
 pub fn sterejec(pos: (f64, f64), view: &View) -> (f32, f32) {
     let lat = -pos.0;
@@ -77,6 +97,7 @@ impl View {
 #[derive(Clone, Debug, Default)]
 pub struct DisplaySettings {
     names: NameSetting,
+    grid: GridSetting,
 }
 
 impl DisplaySettings {
@@ -93,6 +114,19 @@ impl DisplaySettings {
             NameSetting::Hidden => NameSetting::Proper,
         }
     }
+
+    pub fn grid(&self) -> GridSetting {
+        self.grid
+    }
+
+    pub fn cycle_grid(&mut self) {
+        self.grid = match self.grid {
+            GridSetting::MajorMinor => GridSetting::Major,
+            GridSetting::Major => GridSetting::Horizon,
+            GridSetting::Horizon => GridSetting::None,
+            GridSetting::None => GridSetting::MajorMinor,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -103,4 +137,13 @@ pub enum NameSetting {
     HR,
     HD,
     Hidden,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
+pub enum GridSetting {
+    None,
+    Horizon,
+    Major,
+    #[default]
+    MajorMinor,
 }
