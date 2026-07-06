@@ -1,3 +1,5 @@
+use std::ops::Neg;
+
 use sfml::{
     graphics::{CircleShape, Color, Font, RenderTarget, RenderWindow, Shape, Text, Transformable},
     window::{
@@ -6,8 +8,13 @@ use sfml::{
     },
 };
 use sky_map::{
-    DisplaySettings, NameSetting, SCREEN_SIZE, View, drawables::Grid, rad_to_dms, rad_to_hms,
-    star::Star, sterejec, sterejec_to_screen,
+    SCREEN_SIZE,
+    drawables::Grid,
+    rad_to_dms, rad_to_hms,
+    settings::{DisplaySettings, NameSetting},
+    star::Star,
+    sterejec, sterejec_to_screen,
+    view::View,
 };
 
 fn update_star_positions(stars: &[Star], star_circles: &mut [CircleShape], view: &View) {
@@ -21,14 +28,18 @@ fn update_star_positions(stars: &[Star], star_circles: &mut [CircleShape], view:
     }
 }
 
-fn update_star_names(stars: &[Star], star_names: &mut [String], settings: &DisplaySettings) {
+fn update_star_names(
+    stars: &[Star],
+    star_names: &mut [String],
+    display_settings: &DisplaySettings,
+) {
     for (star, name) in stars.iter().zip(star_names.iter_mut()) {
-        *name = match settings.names() {
-            sky_map::NameSetting::Proper => star.star_name(),
-            sky_map::NameSetting::BayerFlamsteed => star.bayerflamsteed_name(),
-            sky_map::NameSetting::HR => star.hr_name(),
-            sky_map::NameSetting::HD => star.hd_name(),
-            sky_map::NameSetting::Hidden => break,
+        *name = match display_settings.names() {
+            NameSetting::Proper => star.star_name(),
+            NameSetting::BayerFlamsteed => star.bayerflamsteed_name(),
+            NameSetting::HR => star.hr_name(),
+            NameSetting::HD => star.hd_name(),
+            NameSetting::Hidden => break,
         }
     }
 }
@@ -187,7 +198,7 @@ fn main() {
 
         let (lat, lng) = view.latlng();
 
-        let ra = rad_to_hms(lng as f32);
+        let ra = rad_to_hms(lng.neg() as f32); // why neg?
         let dec = rad_to_dms(lat as f32);
 
         text.set_string(&format!("RA:  {:02}h{:02}m{:06.3}s", ra.0, ra.1, ra.2));

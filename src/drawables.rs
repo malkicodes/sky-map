@@ -5,7 +5,11 @@ use sfml::{
     graphics::{Color, Drawable, PrimitiveType, Vertex, VertexBuffer, VertexBufferUsage},
 };
 
-use crate::{DisplaySettings, GridSetting, View, sterejec, sterejec_to_screen};
+use crate::{
+    View,
+    settings::{DisplaySettings, GridSetting},
+    sterejec, sterejec_to_screen,
+};
 
 pub struct Grid {
     horizon_vb: FBox<VertexBuffer>,
