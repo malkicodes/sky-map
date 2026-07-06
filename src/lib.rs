@@ -71,7 +71,7 @@ impl Default for View {
 
 impl View {
     pub fn latlng(&self) -> (f64, f64) {
-        (self.o_lat, self.o_lng)
+        (self.o_lat, -self.o_lng)
     }
 
     pub fn change_latlng(&mut self, delta: (f64, f64)) {
