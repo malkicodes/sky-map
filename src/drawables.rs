@@ -8,7 +8,6 @@ use sfml::{
 use crate::{
     View,
     settings::{DisplaySettings, GridSetting},
-    sterejec, sterejec_to_screen,
 };
 
 pub struct Grid {
@@ -60,7 +59,7 @@ impl Grid {
     pub fn update(&mut self, view: &View, settings: &DisplaySettings) -> sfml::SfResult<()> {
         for (pos, v) in self.horizon_vertices.iter_mut().enumerate() {
             *v = Vertex::with_pos_color(
-                sterejec_to_screen(sterejec((0., pos as f64 * PI / 90.), view), view),
+                view.project_to_screen((0., pos as f64 * PI / 90.)),
                 Self::MAJOR_COLOR,
             )
         }
@@ -72,7 +71,7 @@ impl Grid {
 
             for (pos, v) in vertices.iter_mut().enumerate() {
                 *v = Vertex::with_pos_color(
-                    sterejec_to_screen(sterejec((pos as f64 * PI / 90., lng), view), view),
+                    view.project_to_screen((pos as f64 * PI / 90., lng)),
                     if i == 0 || i == 6 {
                         Self::MAJOR_COLOR
                     } else {
@@ -90,7 +89,7 @@ impl Grid {
 
             for (pos, v) in vertices.iter_mut().enumerate() {
                 *v = Vertex::with_pos_color(
-                    sterejec_to_screen(sterejec((lat, pos as f64 * PI / 90.), view), view),
+                    view.project_to_screen((lat, pos as f64 * PI / 90.)),
                     Self::MINOR_COLOR,
                 );
             }

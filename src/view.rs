@@ -49,6 +49,7 @@ impl View {
     }
 
     pub fn project(&self, pos: (f64, f64)) -> (f64, f64) {
+        // https://mathworld.wolfram.com/StereographicProjection.html
         let lat = -pos.0;
         let lng = -pos.1;
 

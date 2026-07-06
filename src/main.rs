@@ -13,16 +13,12 @@ use sky_map::{
     rad_to_dms, rad_to_hms,
     settings::{DisplaySettings, NameSetting},
     star::Star,
-    sterejec, sterejec_to_screen,
     view::View,
 };
 
 fn update_star_positions(stars: &[Star], star_circles: &mut [CircleShape], view: &View) {
     for (star, star_circle) in stars.iter().zip(star_circles) {
-        star_circle.set_position(sterejec_to_screen(
-            sterejec(star.spherical_coordinates(), &view),
-            &view,
-        ));
+        star_circle.set_position(view.project_to_screen(star.spherical_coordinates()));
 
         star_circle.set_radius(star.graphical_size() * view.zoom_v());
     }
