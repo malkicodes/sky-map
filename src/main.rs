@@ -9,7 +9,7 @@ use sfml::{
 };
 use sky_map::{
     SCREEN_SIZE,
-    drawables::Grid,
+    drawables::grid::Grid,
     rad_to_dms, rad_to_hms,
     settings::{DisplaySettings, NameSetting},
     star::Star,

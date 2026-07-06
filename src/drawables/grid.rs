@@ -1,28 +1,38 @@
-use std::{array, f64::consts::PI};
+use sfml::graphics::Drawable;
 
-use sfml::{
-    cpp::FBox,
-    graphics::{Color, Drawable, PrimitiveType, Vertex, VertexBuffer, VertexBufferUsage},
-};
+use crate::settings::DisplaySettings;
 
-use crate::{
-    View,
-    settings::{DisplaySettings, GridSetting},
-};
+use crate::View;
+use crate::settings::GridSetting;
+
+use std::array;
+use std::f64::consts::PI;
+
+use sfml::graphics::VertexBufferUsage;
+
+use sfml::graphics::PrimitiveType;
+
+use sfml::graphics::Color;
+
+use sfml::graphics::Vertex;
+
+use sfml::graphics::VertexBuffer;
+
+use sfml::cpp::FBox;
 
 pub struct Grid {
-    horizon_vb: FBox<VertexBuffer>,
-    horizon_vertices: [Vertex; 181],
+    pub(crate) horizon_vb: FBox<VertexBuffer>,
+    pub(crate) horizon_vertices: [Vertex; 181],
 
-    lng_lines: [(FBox<VertexBuffer>, [Vertex; 181]); 12],
-    lat_lines: [(FBox<VertexBuffer>, [Vertex; 181]); 10],
+    pub(crate) lng_lines: [(FBox<VertexBuffer>, [Vertex; 181]); 12],
+    pub(crate) lat_lines: [(FBox<VertexBuffer>, [Vertex; 181]); 10],
 
-    setting: GridSetting,
+    pub(crate) setting: GridSetting,
 }
 
 impl Grid {
-    const MAJOR_COLOR: Color = Color::rgb(96, 96, 96);
-    const MINOR_COLOR: Color = Color::rgb(64, 64, 64);
+    pub(crate) const MAJOR_COLOR: Color = Color::rgb(96, 96, 96);
+    pub(crate) const MINOR_COLOR: Color = Color::rgb(64, 64, 64);
 
     pub fn new() -> sfml::SfResult<Grid> {
         let vb = VertexBuffer::new(PrimitiveType::LINE_STRIP, 181, VertexBufferUsage::STREAM)?;
