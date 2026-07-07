@@ -48,6 +48,10 @@ impl Star {
         self.bayer.as_ref().map(|b| b.to_string())
     }
 
+    pub fn bayer(&self) -> Option<Bayer> {
+        self.bayer
+    }
+
     pub fn flamsteed_name(&self) -> Option<String> {
         self.flamsteed
             .map(|(number, constellation)| format!("{number} {constellation}"))
@@ -160,7 +164,7 @@ impl FromStr for DurchmusterungSurvey {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Bayer {
     pub letter: char,
     pub constellation: arrayvec::ArrayString<3>,

@@ -9,7 +9,7 @@ use sfml::{
 };
 use sky_map::{
     SCREEN_SIZE,
-    drawables::grid::Grid,
+    drawables::{constellation::load_constellations, grid::Grid},
     rad_to_dms, rad_to_hms,
     settings::{DisplaySettings, NameSetting},
     star::Star,
@@ -63,10 +63,13 @@ fn main() {
 
     let stars: Vec<Star> = {
         let mut s: Vec<Star> = serde_json::from_str(include_str!("../assets/ybsc5.json")).unwrap();
-        s.sort_by(|a, b| a.vmag.total_cmp(&b.vmag));
+        // uncomment line below to sort stars by magnitude for some reason
+        // s.sort_by(|a, b| a.vmag.total_cmp(&b.vmag));
 
         s
     };
+
+    let mut constellations = load_constellations(&stars);
 
     let mut star_names = vec![String::new(); stars.len()];
     update_star_names(&stars, &mut star_names, &settings);
@@ -161,6 +164,11 @@ fn main() {
 
         grid.update(&view, &settings).unwrap();
         window.draw(&grid);
+
+        for constellation in constellations.iter_mut() {
+            constellation.update(&view, &settings).unwrap();
+            window.draw(constellation);
+        }
 
         for ((s, name), star) in star_circles
             .iter()

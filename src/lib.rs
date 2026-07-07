@@ -1,5 +1,7 @@
 use std::f32::consts::PI;
 
+use phf::phf_map;
+
 use crate::view::View;
 
 pub mod drawables;
@@ -27,6 +29,33 @@ pub fn rad_to_dms(rad: f32) -> (i16, u16, f32) {
         arcseconds,
     )
 }
+
+pub static GREEK_LETTERS: phf::Map<&'static str, char> = phf_map! {
+    "alp" | "alf" => 'α',
+    "bet" => 'β',
+    "gam" => 'γ',
+    "del" => 'δ',
+    "eps" => 'ε',
+    "zet" => 'ζ',
+    "eta" => 'η',
+    "the" | "tet" => 'θ',
+    "iot" => 'ι',
+    "kap" => 'κ',
+    "lam" => 'λ',
+    "mu" | "mu." => 'μ',
+    "nu" | "nu." => 'ν',
+    "xi" | "ksi" => 'ξ',
+    "omi" => 'ο',
+    "pi" | "pi." => 'π',
+    "rho" => 'ρ',
+    "sig" => 'σ',
+    "tau" => 'τ',
+    "ups" => 'υ',
+    "phi" => 'φ',
+    "chi" => 'χ',
+    "psi" => 'ψ',
+    "ome" => 'ω'
+};
 
 pub mod settings;
 pub mod view;
