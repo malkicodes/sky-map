@@ -21,6 +21,7 @@ fn update_star_positions(stars: &[Star], star_circles: &mut [CircleShape], view:
         star_circle.set_position(view.project_to_screen(star.spherical_coordinates()));
 
         star_circle.set_radius(star.graphical_size() * view.zoom_v());
+        star_circle.set_origin(star_circle.radius());
     }
 }
 
