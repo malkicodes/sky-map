@@ -12,8 +12,7 @@ impl DisplaySettings {
     pub fn cycle_names(&mut self) {
         self.names = match self.names {
             NameSetting::Proper => NameSetting::BayerFlamsteed,
-            NameSetting::BayerFlamsteed => NameSetting::HR,
-            NameSetting::HR => NameSetting::HD,
+            NameSetting::BayerFlamsteed => NameSetting::HD,
             NameSetting::HD => NameSetting::Hidden,
             NameSetting::Hidden => NameSetting::Proper,
         }
@@ -38,7 +37,6 @@ pub enum NameSetting {
     #[default]
     Proper,
     BayerFlamsteed,
-    HR,
     HD,
     Hidden,
 }

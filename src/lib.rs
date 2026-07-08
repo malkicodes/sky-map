@@ -57,5 +57,8 @@ pub static GREEK_LETTERS: phf::Map<&'static str, char> = phf_map! {
     "ome" => 'ω'
 };
 
+pub const SUPERSCRIPT_CHARS: [char; 10] = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'];
+pub const SUBSCRIPT_CHARS: [char; 10] = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
+
 pub mod settings;
 pub mod view;

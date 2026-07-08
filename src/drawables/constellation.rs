@@ -1,20 +1,12 @@
-use std::{
-    collections::HashMap,
-    fs::{self, File},
-};
+use std::fs::File;
 
-use arrayvec::ArrayString;
 use sfml::{
     SfResult,
     cpp::FBox,
     graphics::{Color, Drawable, PrimitiveType, Vertex, VertexBuffer, VertexBufferUsage},
 };
 
-use crate::{
-    GREEK_LETTERS, View,
-    settings::DisplaySettings,
-    star::{Bayer, Star},
-};
+use crate::{View, settings::DisplaySettings, star::Star};
 
 #[derive(Debug, Clone)]
 pub struct Constellation {
@@ -49,14 +41,21 @@ impl Constellation {
             name,
         })
     }
-    
-    const LINE_COLOR: Color = Color { a: 128, ..Color::BLUE };
+
+    const LINE_COLOR: Color = Color {
+        a: 128,
+        ..Color::BLUE
+    };
 
     pub fn update(&mut self, view: &View, _settings: &DisplaySettings) -> SfResult<()> {
         for (v, (_i, coords)) in self.vertices.iter_mut().zip(self.star_info.iter().copied()) {
             *v = Vertex::with_pos_color(view.project_to_screen(coords), Self::LINE_COLOR);
         }
         self.vb.update(&self.vertices, 0)
+    }
+
+    pub fn name(&self) -> &str {
+        self.name.as_str()
     }
 }
 
@@ -70,6 +69,7 @@ impl Drawable for Constellation {
     }
 }
 
+#[allow(dead_code, reason = "info panel for constellation will need this data")]
 mod constellation_data {
     use serde::Deserialize;
 
@@ -107,60 +107,17 @@ pub fn load_constellations(star_data: &[Star]) -> Vec<Constellation> {
         let mut lines: Vec<[usize; 2]> = Vec::new();
 
         for path in constellation.lines {
-            for [x, y] in path.array_windows::<2>() {
-                let xbayer = match simbad_to_bayer(x) {
-                    Some(v) => v,
-                    None => {
-                        eprintln!(
-                            "WARNING: Constellation loader could not convert star {x}, skipping"
-                        );
-                        continue;
-                    }
-                };
-
-                let ybayer = match simbad_to_bayer(y) {
-                    Some(v) => v,
-                    None => {
-                        eprintln!(
-                            "WARNING: Constellation loader could not convert star {y}, skipping"
-                        );
-                        continue;
-                    }
-                };
-
-                let xstar_i = star_data
-                    .iter()
-                    .enumerate()
-                    .find(|(i, star)| {
-                        star.bayer.is_some_and(|star_bayer| {
-                            star_bayer.constellation == xbayer.constellation
-                                && star_bayer.letter == xbayer.letter
-                                && xbayer.superscript.is_none_or(|xs| {
-                                    star_bayer.superscript.is_some_and(|ss| ss == xs)
-                                })
-                        })
-                    })
-                    .map(|(i, _)| i);
-
-                let ystar_i = star_data
-                    .iter()
-                    .enumerate()
-                    .find(|(_i, star)| {
-                        star.bayer.is_some_and(|star_bayer| {
-                            star_bayer.constellation == ybayer.constellation
-                                && star_bayer.letter == ybayer.letter
-                                && ybayer.superscript.is_none_or(|ys| {
-                                    star_bayer.superscript.is_some_and(|ss| ss == ys)
-                                })
-                        })
-                    })
-                    .map(|(i, _)| i);
-
-                match [xstar_i, ystar_i] {
-                    [Some(x), Some(y)] => lines.push([x, y]),
-                    _ => eprintln!(
-                        "WARNING: Constellation loader could not find stars {xbayer} and/or {ybayer}, skipping"
-                    ),
+            for [target_a, target_b] in path.array_windows::<2>() {
+                if let [Some(a), Some(b)] = [target_a, target_b].map(|target_simbad| {
+                    star_data
+                        .iter()
+                        .enumerate()
+                        .find(|(_, star)| star.simbad_id().eq(target_simbad))
+                        .map(|(i, _)| i)
+                }) {
+                    lines.push([a, b]);
+                } else {
+                    eprintln!("WARNING: Could not find stars {} - {}", target_a, target_b);
                 }
             }
         }
@@ -181,28 +138,4 @@ pub fn load_constellations(star_data: &[Star]) -> Vec<Constellation> {
     }
 
     constellations
-}
-
-fn simbad_to_bayer(simbad: &str) -> Option<Bayer> {
-    if !simbad.starts_with('*') {
-        return None;
-    }
-
-    let mut words = simbad.split_ascii_whitespace().skip(1);
-
-    let mut letter_string = words.next()?;
-    let superscript = if letter_string.len() > 3 {
-        let superscript = letter_string[3..].parse().ok()?;
-        letter_string = &letter_string[0..3];
-        Some(superscript)
-    } else {
-        None
-    };
-    let constellation = ArrayString::from(words.next()?).ok()?;
-
-    Some(Bayer {
-        letter: *GREEK_LETTERS.get(&letter_string)?,
-        constellation,
-        superscript,
-    })
 }

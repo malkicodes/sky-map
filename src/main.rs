@@ -33,8 +33,9 @@ fn update_star_names(
     for (star, name) in stars.iter().zip(star_names.iter_mut()) {
         *name = match display_settings.names() {
             NameSetting::Proper => star.star_name(),
-            NameSetting::BayerFlamsteed => star.bayerflamsteed_name(),
-            NameSetting::HR => star.hr_name(),
+            NameSetting::BayerFlamsteed => {
+                star.bayerflamsteed_name().unwrap_or_else(|| star.hd_name())
+            }
             NameSetting::HD => star.hd_name(),
             NameSetting::Hidden => break,
         }
@@ -62,9 +63,8 @@ fn main() {
     let mut settings = DisplaySettings::default();
 
     let stars: Vec<Star> = {
-        let mut s: Vec<Star> = serde_json::from_str(include_str!("../assets/ybsc5.json")).unwrap();
-        // uncomment line below to sort stars by magnitude for some reason
-        // s.sort_by(|a, b| a.vmag.total_cmp(&b.vmag));
+        let mut s: Vec<Star> = serde_json::from_str(include_str!("../assets/stars.json")).unwrap();
+        s.sort_by(|a, b| a.apparent_magnitude().total_cmp(&b.apparent_magnitude()));
 
         s
     };
@@ -76,12 +76,17 @@ fn main() {
 
     let mut star_circles: Vec<CircleShape> = Vec::with_capacity(stars.len());
     for star in stars.iter() {
-        let mut c = CircleShape::new(star.graphical_size(), 24);
+        let mut c = CircleShape::new(
+            star.graphical_size(),
+            if star.apparent_magnitude() < 2. {
+                48
+            } else {
+                24
+            },
+        );
         c.set_origin(c.radius());
 
-        if let Some(color) = star.graphical_color() {
-            c.set_fill_color(color);
-        }
+        c.set_fill_color(star.graphical_color());
 
         star_circles.push(c);
     }
@@ -177,7 +182,8 @@ fn main() {
             .filter(|((c, _), _)| {
                 let pos = c.position();
 
-                pos.x > -2. * c.radius()
+                c.radius() > 0.5
+                    && pos.x > -2. * c.radius()
                     && pos.x < SCREEN_SIZE as f32 + c.radius()
                     && pos.y > -2. * c.radius()
                     && pos.y < SCREEN_SIZE as f32 + c.radius()
@@ -185,7 +191,9 @@ fn main() {
         {
             window.draw(s);
 
-            if settings.names() == NameSetting::Hidden || star.vmag > (view.zoom() + 1.75).max(2.) {
+            if settings.names() == NameSetting::Hidden
+                || star.apparent_magnitude() > (view.zoom() + 1.75).max(2.)
+            {
                 // skip name
                 continue;
             }
