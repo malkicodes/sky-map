@@ -12,7 +12,7 @@ use sky_map::{
     drawables::{constellation::load_constellations, grid::Grid},
     rad_to_dms, rad_to_hms,
     settings::{DisplaySettings, NameSetting},
-    star::Star,
+    star::{Star, load_stars},
     view::View,
 };
 
@@ -62,12 +62,7 @@ fn main() {
     let mut view = View::default();
     let mut settings = DisplaySettings::default();
 
-    let stars: Vec<Star> = {
-        let mut s: Vec<Star> = serde_json::from_str(include_str!("../assets/stars.json")).unwrap();
-        s.sort_by(|a, b| a.apparent_magnitude().total_cmp(&b.apparent_magnitude()));
-
-        s
-    };
+    let stars: Vec<Star> = load_stars();
 
     let mut constellations = load_constellations(&stars);
 
