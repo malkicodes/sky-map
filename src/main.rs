@@ -120,6 +120,9 @@ fn main() {
                 Event::KeyPressed { code: Key::G, .. } => {
                     settings.cycle_grid();
                 }
+                Event::KeyPressed { code: Key::Z, .. } => {
+                    settings.toggle_zen_mode();
+                }
                 Event::MouseMoved { x, y } => {
                     let (deltax, deltay) = (x - mouse.0, y - mouse.1);
                     mouse = (x, y);
@@ -170,9 +173,11 @@ fn main() {
         grid.update(&view, &settings).unwrap();
         window.draw(&grid);
 
-        for constellation in constellations.iter_mut() {
-            constellation.update(&view, &settings).unwrap();
-            window.draw(constellation);
+        if !settings.zen_mode() {
+            for constellation in constellations.iter_mut() {
+                constellation.update(&view, &settings).unwrap();
+                window.draw(constellation);
+            }
         }
 
         for ((s, name), star) in star_circles
@@ -191,7 +196,8 @@ fn main() {
         {
             window.draw(s);
 
-            if settings.names() == NameSetting::Hidden
+            if settings.zen_mode()
+                || settings.names() == NameSetting::Hidden
                 || star.apparent_magnitude() > (view.zoom() + 1.75).max(2.)
             {
                 // skip name

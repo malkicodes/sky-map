@@ -1,7 +1,9 @@
 #[derive(Clone, Debug, Default)]
 pub struct DisplaySettings {
-    pub(crate) names: NameSetting,
-    pub(crate) grid: GridSetting,
+    names: NameSetting,
+    grid: GridSetting,
+
+    zen_mode: bool,
 }
 
 impl DisplaySettings {
@@ -29,6 +31,14 @@ impl DisplaySettings {
             GridSetting::Horizon => GridSetting::None,
             GridSetting::None => GridSetting::MajorMinor,
         }
+    }
+
+    pub fn zen_mode(&self) -> bool {
+        self.zen_mode
+    }
+
+    pub fn toggle_zen_mode(&mut self) {
+        self.zen_mode = !self.zen_mode
     }
 }
 

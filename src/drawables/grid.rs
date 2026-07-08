@@ -107,7 +107,11 @@ impl Grid {
             vb.update(vertices, 0)?;
         }
 
-        self.setting = settings.grid();
+        self.setting = if settings.zen_mode() && settings.grid() != GridSetting::None {
+            GridSetting::Horizon
+        } else {
+            settings.grid()
+        };
 
         Ok(())
     }
