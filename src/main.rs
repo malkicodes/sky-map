@@ -200,7 +200,7 @@ fn main() {
 
             text.set_string(name);
 
-            let mut position = s.position() + s.radius().into();
+            let mut position = s.position();
             let bounds = text.local_bounds();
             position.x -= bounds.width * 0.5;
             position.y += s.radius() + bounds.height * 0.5;
