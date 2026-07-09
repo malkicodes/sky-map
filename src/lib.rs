@@ -7,6 +7,15 @@ use crate::view::View;
 pub mod drawables;
 pub mod star;
 
+pub mod colors {
+    use sfml::graphics::Color;
+
+    pub const BACKGROUND_COLOR: Color = Color::BLACK;
+    pub const GRID_MAJOR_COLOR: Color = Color::rgba(255, 255, 255, 64);
+    pub const GRID_MINOR_COLOR: Color = Color::rgba(255, 255, 255, 32);
+    pub const CONSTELLATION_COLOR: Color = Color::rgb(64, 64, 128);
+}
+
 pub const SCREEN_SIZE: u32 = 1000;
 pub const HALF_SCREEN_SIZE: u32 = SCREEN_SIZE / 2;
 

@@ -42,10 +42,7 @@ impl Constellation {
         })
     }
 
-    const LINE_COLOR: Color = Color {
-        a: 128,
-        ..Color::BLUE
-    };
+    const LINE_COLOR: Color = crate::colors::CONSTELLATION_COLOR;
 
     pub fn update(&mut self, view: &View, _settings: &DisplaySettings) -> SfResult<()> {
         for (v, (_i, coords)) in self.vertices.iter_mut().zip(self.star_info.iter().copied()) {

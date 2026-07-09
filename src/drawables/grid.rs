@@ -1,5 +1,6 @@
 use sfml::graphics::Drawable;
 
+use crate::colors;
 use crate::settings::DisplaySettings;
 
 use crate::View;
@@ -31,8 +32,8 @@ pub struct Grid {
 }
 
 impl Grid {
-    pub(crate) const MAJOR_COLOR: Color = Color::rgb(96, 96, 96);
-    pub(crate) const MINOR_COLOR: Color = Color::rgb(64, 64, 64);
+    pub(crate) const MAJOR_COLOR: Color = colors::GRID_MAJOR_COLOR;
+    pub(crate) const MINOR_COLOR: Color = colors::GRID_MINOR_COLOR;
 
     pub fn new() -> sfml::SfResult<Grid> {
         let vb = VertexBuffer::new(PrimitiveType::LINE_STRIP, 181, VertexBufferUsage::STREAM)?;

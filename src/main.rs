@@ -9,7 +9,7 @@ use sfml::{
     },
 };
 use sky_map::{
-    SCREEN_SIZE,
+    SCREEN_SIZE, colors,
     drawables::{constellation::load_constellations, grid::Grid},
     rad_to_dms, rad_to_hms,
     settings::{DisplaySettings, NameSetting},
@@ -151,7 +151,7 @@ fn main() {
 
         update_star_positions(&stars, &mut star_info, &view);
 
-        window.clear(Color::BLACK);
+        window.clear(colors::BACKGROUND_COLOR);
 
         grid.update(&view, &settings).unwrap();
         window.draw(&grid);
