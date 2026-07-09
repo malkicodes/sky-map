@@ -40,7 +40,9 @@ impl Star {
     }
 
     pub fn star_name(&self) -> String {
-        self.simbad_id()
+        self.proper_name()
+            .or_else(|| self.bayerflamsteed_name())
+            .unwrap_or_else(|| self.hd_name())
     }
 
     pub fn bayerflamsteed_name(&self) -> Option<String> {
