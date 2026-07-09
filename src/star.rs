@@ -138,9 +138,9 @@ impl Star {
 
     pub fn graphical_size(&self) -> f32 {
         const FALLOFF: f32 = 0.65; // irl value: 5th root of 0.01 ~= 0.398
-        const MULTIPLIER: f32 = 5.;
+        const MULTIPLIER: f32 = 4.;
         const MIN_SIZE: f32 = 0.0;
-        const MAX_SIZE: f32 = 5.0;
+        const MAX_SIZE: f32 = 4.0;
 
         (MULTIPLIER * FALLOFF.powf(self.mag)).clamp(MIN_SIZE, MAX_SIZE)
     }

@@ -55,13 +55,13 @@ impl DisplaySettings {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub enum NameSetting {
+    Hidden,
+    HD,
+    BayerFlamsteed,
     #[default]
     Proper,
-    BayerFlamsteed,
-    HD,
-    Hidden,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]

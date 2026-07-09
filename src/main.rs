@@ -38,6 +38,10 @@ fn update_star_names(
             }
             NameSetting::HD => star.hd_name(),
             NameSetting::Hidden => break,
+        };
+
+        if display_settings.names() > NameSetting::HD && name.starts_with("HD") {
+            name.clear();
         }
     }
 }
@@ -170,12 +174,8 @@ fn main() {
                     window.draw(constellation);
                 }
             } else if settings.constellations() == ConstellationSetting::Hover {
-                for constellation in constellations.iter() {
-                    let centroid_projected = view.project(constellation.centroid());
-
-                    if centroid_projected.length_sq() < 0.25 {
-                        window.draw(constellation);
-                    }
+                for constellation in constellations.iter().filter(|c| c.is_hovered(&view)) {
+                    window.draw(constellation);
                 }
             }
         }
@@ -199,7 +199,7 @@ fn main() {
 
             if settings.zen_mode()
                 || settings.names() == NameSetting::Hidden
-                || star.apparent_magnitude() > (view.zoom() + 1.75).max(2.)
+                || star.apparent_magnitude() > (view.zoom() + 1.5).max(1.)
             {
                 // skip name
                 continue;

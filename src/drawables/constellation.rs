@@ -7,7 +7,7 @@ use sfml::{
     system::Vector3,
 };
 
-use crate::{View, settings::DisplaySettings, star::Star};
+use crate::{View, settings::DisplaySettings, star::Star, view};
 
 #[derive(Debug, Clone)]
 pub struct Constellation {
@@ -66,6 +66,12 @@ impl Constellation {
     }
 
     const LINE_COLOR: Color = crate::colors::CONSTELLATION_COLOR;
+
+    pub fn is_hovered(&self, view: &View) -> bool {
+        let centroid_projected = view.project(self.centroid());
+
+        centroid_projected.length_sq() < 0.25
+    }
 
     pub fn update(&mut self, view: &View, _settings: &DisplaySettings) -> SfResult<()> {
         for (v, (_i, coords)) in self.vertices.iter_mut().zip(self.star_info.iter().copied()) {
