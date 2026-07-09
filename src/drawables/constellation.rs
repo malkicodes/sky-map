@@ -29,37 +29,23 @@ impl Constellation {
         let mut seen_stars = HashSet::with_capacity(lines.len());
 
         for star_i in lines.iter().flatten().copied() {
-            let coords = star_data[star_i].spherical_coordinates();
-            star_info.push((star_i, coords));
+            let (dec, ra) = star_data[star_i].spherical_coordinates();
+            star_info.push((star_i, (dec, ra)));
 
             if !seen_stars.contains(&star_i) {
+                println!("{:.6?}\t{:.6?}", ra, dec);
                 seen_stars.insert(star_i);
-                coords_sum += Vector3::new(
-                    coords.0.cos() * coords.1.cos(),
-                    coords.0.sin() * coords.1.cos(),
-                    coords.1.sin(),
-                );
+                coords_sum += Vector3::new(ra.cos() * dec.cos(), ra.sin() * dec.cos(), dec.sin());
             }
         }
 
         let coords_center = coords_sum / seen_stars.len() as f64;
         let sphere_center = coords_center / coords_center.length_sq().sqrt();
 
-        let centroid_a = sphere_center.y.atan2(sphere_center.x);
-        let centroid_b = sphere_center.z.asin();
+        let centroid_ra = sphere_center.y.atan2(sphere_center.x);
+        let centroid_dec = sphere_center.z.asin();
 
-        let centroid = (
-            if sphere_center.x < 0. {
-                -centroid_a
-            } else {
-                centroid_a
-            },
-            if sphere_center.x < 0. {
-                -centroid_b
-            } else {
-                centroid_b
-            },
-        );
+        let centroid = (centroid_dec, centroid_ra);
 
         let vertices = vec![Vertex::DEFAULT; star_info.len()];
         let vb = VertexBuffer::new(

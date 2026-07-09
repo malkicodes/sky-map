@@ -86,10 +86,6 @@ fn main() {
     let mut mouse = (0, 0);
     let mut mouse_down = false;
 
-    let mut debug = CircleShape::new(5., 16);
-    debug.set_origin(5.);
-    debug.set_fill_color(Color::GREEN);
-
     'mainloop: loop {
         while let Some(ev) = window.poll_event() {
             match ev {
@@ -179,10 +175,6 @@ fn main() {
 
                     if centroid_projected.length_sq() < 0.25 {
                         window.draw(constellation);
-                        debug.set_position(view.project_to_screen(constellation.centroid()));
-                        window.draw(&debug);
-
-                        println!("{:?}", constellation.centroid())
                     }
                 }
             }
