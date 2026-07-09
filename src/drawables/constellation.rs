@@ -7,7 +7,11 @@ use sfml::{
     system::Vector3,
 };
 
-use crate::{View, settings::DisplaySettings, star::Star, view};
+use crate::{
+    View,
+    settings::{ConstellationSetting, DisplaySettings},
+    star::Star,
+};
 
 #[derive(Debug, Clone)]
 pub struct Constellation {
@@ -17,6 +21,7 @@ pub struct Constellation {
     star_info: Vec<(usize, (f64, f64))>,
 
     centroid: (f64, f64),
+    opacity: u8,
 
     name: String,
 }
@@ -60,12 +65,14 @@ impl Constellation {
             star_info,
 
             centroid,
+            opacity: 0,
 
             name,
         })
     }
 
     const LINE_COLOR: Color = crate::colors::CONSTELLATION_COLOR;
+    const OPACITY_CHANGE_PER_FRAME: u8 = 8; // approx 32 frames
 
     pub fn is_hovered(&self, view: &View) -> bool {
         let centroid_projected = view.project(self.centroid());
@@ -73,9 +80,31 @@ impl Constellation {
         centroid_projected.length_sq() < 0.25
     }
 
-    pub fn update(&mut self, view: &View, _settings: &DisplaySettings) -> SfResult<()> {
+    pub fn should_render(&self) -> bool {
+        self.opacity != 0
+    }
+
+    pub fn opacity(&self) -> u8 {
+        self.opacity
+    }
+
+    pub fn update(&mut self, view: &View, settings: &DisplaySettings) -> SfResult<()> {
+        if settings.constellations() != ConstellationSetting::None
+            && (self.is_hovered(view) || settings.constellations() == ConstellationSetting::All)
+        {
+            self.opacity = self.opacity.saturating_add(Self::OPACITY_CHANGE_PER_FRAME);
+        } else {
+            self.opacity = self.opacity.saturating_sub(Self::OPACITY_CHANGE_PER_FRAME);
+        }
+
         for (v, (_i, coords)) in self.vertices.iter_mut().zip(self.star_info.iter().copied()) {
-            *v = Vertex::with_pos_color(view.project_to_screen(coords), Self::LINE_COLOR);
+            *v = Vertex::with_pos_color(
+                view.project_to_screen(coords),
+                Color {
+                    a: self.opacity,
+                    ..Self::LINE_COLOR
+                },
+            );
         }
         self.vb.update(&self.vertices, 0)
     }

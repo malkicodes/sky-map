@@ -1,7 +1,9 @@
 use std::ops::Neg;
 
 use sfml::{
-    graphics::{CircleShape, Color, Font, RenderTarget, RenderWindow, Shape, Text, Transformable},
+    graphics::{
+        CircleShape, Color, Font, RenderTarget, RenderWindow, Shape, Text, TextStyle, Transformable,
+    },
     system::Vector2f,
     window::{
         ContextSettings, Event, Key, Style,
@@ -169,15 +171,37 @@ fn main() {
             for constellation in constellations.iter_mut() {
                 constellation.update(&view, &settings).unwrap();
             }
-            if settings.constellations() == ConstellationSetting::All {
-                for constellation in constellations.iter() {
-                    window.draw(constellation);
+
+            text.set_style(TextStyle::BOLD);
+            text.set_character_size(16);
+            let mut count: u8 = 0;
+
+            for cst in constellations.iter() {
+                if !cst.should_render() {
+                    continue;
                 }
-            } else if settings.constellations() == ConstellationSetting::Hover {
-                for constellation in constellations.iter().filter(|c| c.is_hovered(&view)) {
-                    window.draw(constellation);
-                }
+
+                count += 1;
+                window.draw(cst);
+
+                let mut label_pos = view.project_to_screen(cst.centroid());
+
+                text.set_string(cst.name());
+                text.set_fill_color(Color {
+                    a: cst.opacity(),
+                    ..Color::WHITE
+                });
+                label_pos -= text.global_bounds().size() * 0.5;
+                text.set_position(label_pos);
+
+                window.draw(&text);
             }
+
+            eprintln!("Rendered {count} constellations");
+
+            text.set_fill_color(Color::WHITE);
+            text.set_character_size(12);
+            text.set_style(TextStyle::REGULAR);
         }
 
         for ((&(pos, radius, color), name), star) in star_info
