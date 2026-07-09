@@ -1,9 +1,10 @@
-use std::fs::File;
+use std::{collections::HashSet, f64::consts::PI, fs::File};
 
 use sfml::{
     SfResult,
     cpp::FBox,
     graphics::{Color, Drawable, PrimitiveType, Vertex, VertexBuffer, VertexBufferUsage},
+    system::Vector3,
 };
 
 use crate::{View, settings::DisplaySettings, star::Star};
@@ -15,6 +16,8 @@ pub struct Constellation {
     /// Index for each star from original star data list
     star_info: Vec<(usize, (f64, f64))>,
 
+    centroid: (f64, f64),
+
     name: String,
 }
 
@@ -22,9 +25,41 @@ impl Constellation {
     pub fn new(lines: Vec<[usize; 2]>, star_data: &[Star], name: String) -> SfResult<Self> {
         let mut star_info: Vec<(usize, (f64, f64))> = Vec::with_capacity(lines.len() * 2);
 
+        let mut coords_sum = Vector3::<f64>::default();
+        let mut seen_stars = HashSet::with_capacity(lines.len());
+
         for star_i in lines.iter().flatten().copied() {
-            star_info.push((star_i, star_data[star_i].spherical_coordinates()));
+            let coords = star_data[star_i].spherical_coordinates();
+            star_info.push((star_i, coords));
+
+            if !seen_stars.contains(&star_i) {
+                seen_stars.insert(star_i);
+                coords_sum += Vector3::new(
+                    coords.0.cos() * coords.1.cos(),
+                    coords.0.sin() * coords.1.cos(),
+                    coords.1.sin(),
+                );
+            }
         }
+
+        let coords_center = coords_sum / seen_stars.len() as f64;
+        let sphere_center = coords_center / coords_center.length_sq().sqrt();
+
+        let centroid_a = sphere_center.y.atan2(sphere_center.x);
+        let centroid_b = sphere_center.z.asin();
+
+        let centroid = (
+            if sphere_center.x < 0. {
+                -centroid_a
+            } else {
+                centroid_a
+            },
+            if sphere_center.x < 0. {
+                -centroid_b
+            } else {
+                centroid_b
+            },
+        );
 
         let vertices = vec![Vertex::DEFAULT; star_info.len()];
         let vb = VertexBuffer::new(
@@ -37,6 +72,8 @@ impl Constellation {
             vb,
             vertices,
             star_info,
+
+            centroid,
 
             name,
         })
@@ -53,6 +90,10 @@ impl Constellation {
 
     pub fn name(&self) -> &str {
         self.name.as_str()
+    }
+
+    pub fn centroid(&self) -> (f64, f64) {
+        self.centroid
     }
 }
 

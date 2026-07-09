@@ -2,6 +2,7 @@
 pub struct DisplaySettings {
     names: NameSetting,
     grid: GridSetting,
+    constellations: ConstellationSetting,
 
     zen_mode: bool,
 }
@@ -33,6 +34,18 @@ impl DisplaySettings {
         }
     }
 
+    pub fn constellations(&self) -> ConstellationSetting {
+        self.constellations
+    }
+
+    pub fn cycle_constellations(&mut self) {
+        self.constellations = match self.constellations {
+            ConstellationSetting::All => ConstellationSetting::Hover,
+            ConstellationSetting::Hover => ConstellationSetting::None,
+            ConstellationSetting::None => ConstellationSetting::All,
+        }
+    }
+
     pub fn zen_mode(&self) -> bool {
         self.zen_mode
     }
@@ -58,4 +71,12 @@ pub enum GridSetting {
     Major,
     #[default]
     MajorMinor,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub enum ConstellationSetting {
+    All,
+    #[default]
+    Hover,
+    None,
 }

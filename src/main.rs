@@ -1,4 +1,4 @@
-use std::ops::Neg;
+use std::ops::{Neg, Range};
 
 use sfml::{
     graphics::{CircleShape, Color, Font, RenderTarget, RenderWindow, Shape, Text, Transformable},
@@ -12,7 +12,7 @@ use sky_map::{
     SCREEN_SIZE, colors,
     drawables::{constellation::load_constellations, grid::Grid},
     rad_to_dms, rad_to_hms,
-    settings::{DisplaySettings, NameSetting},
+    settings::{ConstellationSetting, DisplaySettings, NameSetting},
     star::{Star, load_stars},
     view::View,
 };
@@ -57,6 +57,8 @@ fn main() {
     )
     .unwrap();
 
+    window.set_framerate_limit(60);
+
     let mut view = View::default();
     let mut settings = DisplaySettings::default();
 
@@ -84,6 +86,10 @@ fn main() {
     let mut mouse = (0, 0);
     let mut mouse_down = false;
 
+    let mut debug = CircleShape::new(5., 16);
+    debug.set_origin(5.);
+    debug.set_fill_color(Color::GREEN);
+
     'mainloop: loop {
         while let Some(ev) = window.poll_event() {
             match ev {
@@ -105,6 +111,9 @@ fn main() {
                 }
                 Event::KeyPressed { code: Key::Z, .. } => {
                     settings.toggle_zen_mode();
+                }
+                Event::KeyPressed { code: Key::C, .. } => {
+                    settings.cycle_constellations();
                 }
                 Event::MouseMoved { x, y } => {
                     let (deltax, deltay) = (x - mouse.0, y - mouse.1);
@@ -159,7 +168,23 @@ fn main() {
         if !settings.zen_mode() {
             for constellation in constellations.iter_mut() {
                 constellation.update(&view, &settings).unwrap();
-                window.draw(constellation);
+            }
+            if settings.constellations() == ConstellationSetting::All {
+                for constellation in constellations.iter() {
+                    window.draw(constellation);
+                }
+            } else if settings.constellations() == ConstellationSetting::Hover {
+                for constellation in constellations.iter() {
+                    let centroid_projected = view.project(constellation.centroid());
+
+                    if centroid_projected.length_sq() < 0.25 {
+                        window.draw(constellation);
+                        debug.set_position(view.project_to_screen(constellation.centroid()));
+                        window.draw(&debug);
+
+                        println!("{:?}", constellation.centroid())
+                    }
+                }
             }
         }
 
