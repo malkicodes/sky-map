@@ -2,6 +2,7 @@ use std::ops::Neg;
 
 use sfml::{
     graphics::{CircleShape, Color, Font, RenderTarget, RenderWindow, Shape, Text, Transformable},
+    system::Vector2f,
     window::{
         ContextSettings, Event, Key, Style,
         mouse::{Button, Wheel},
@@ -16,12 +17,11 @@ use sky_map::{
     view::View,
 };
 
-fn update_star_positions(stars: &[Star], star_circles: &mut [CircleShape], view: &View) {
-    for (star, star_circle) in stars.iter().zip(star_circles) {
-        star_circle.set_position(view.project_to_screen(star.spherical_coordinates()));
+fn update_star_positions(stars: &[Star], star_info: &mut [(Vector2f, f32, Color)], view: &View) {
+    for (star, (pos, radius, _)) in stars.iter().zip(star_info) {
+        *pos = view.project_to_screen(star.spherical_coordinates());
 
-        star_circle.set_radius(star.graphical_size() * view.zoom_v());
-        star_circle.set_origin(star_circle.radius());
+        *radius = star.graphical_size() * view.zoom_v();
     }
 }
 
@@ -57,38 +57,26 @@ fn main() {
     )
     .unwrap();
 
-    window.set_framerate_limit(30);
-
     let mut view = View::default();
     let mut settings = DisplaySettings::default();
 
     let stars: Vec<Star> = load_stars();
+    eprintln!("Loaded {} stars", stars.len());
 
     let mut constellations = load_constellations(&stars);
+    eprintln!("Loaded {} constellations", constellations.len());
 
     let mut star_names = vec![String::new(); stars.len()];
     update_star_names(&stars, &mut star_names, &settings);
 
-    let mut star_circles: Vec<CircleShape> = Vec::with_capacity(stars.len());
-    for star in stars.iter() {
-        let mut c = CircleShape::new(
-            star.graphical_size(),
-            if star.apparent_magnitude() < 2. {
-                48
-            } else {
-                24
-            },
-        );
-        c.set_origin(c.radius());
-
-        c.set_fill_color(star.graphical_color());
-
-        star_circles.push(c);
+    let mut star_info: Vec<(Vector2f, f32, Color)> = vec![Default::default(); stars.len()];
+    for ((_, _, color), star) in star_info.iter_mut().zip(stars.iter()) {
+        *color = star.graphical_color()
     }
 
-    update_star_positions(&stars, &mut star_circles, &view);
+    update_star_positions(&stars, &mut star_info, &view);
 
-    eprintln!("Loaded {} stars", stars.len());
+    let mut star_drawer: CircleShape = CircleShape::new(1., 48);
 
     let mut text = Text::new("", &font, 12);
     let mut grid = Grid::new().unwrap();
@@ -161,7 +149,7 @@ fn main() {
             }
         }
 
-        update_star_positions(&stars, &mut star_circles, &view);
+        update_star_positions(&stars, &mut star_info, &view);
 
         window.clear(Color::BLACK);
 
@@ -175,21 +163,22 @@ fn main() {
             }
         }
 
-        for ((s, name), star) in star_circles
+        for ((&(pos, radius, color), name), star) in star_info
             .iter()
             .zip(star_names.iter())
             .zip(stars.iter())
-            .filter(|((c, _), _)| {
-                let pos = c.position();
-
-                c.radius() > 0.5
-                    && pos.x > -2. * c.radius()
-                    && pos.x < SCREEN_SIZE as f32 + c.radius()
-                    && pos.y > -2. * c.radius()
-                    && pos.y < SCREEN_SIZE as f32 + c.radius()
+            .filter(|(((pos, radius, _), _), _)| {
+                *radius > 0.5
+                    && pos.x > -2. * (*radius)
+                    && pos.x < SCREEN_SIZE as f32 + (*radius)
+                    && pos.y > -2. * (*radius)
+                    && pos.y < SCREEN_SIZE as f32 + (*radius)
             })
         {
-            window.draw(s);
+            star_drawer.set_position(pos - radius.into());
+            star_drawer.set_radius(radius);
+            star_drawer.set_fill_color(color);
+            window.draw(&star_drawer);
 
             if settings.zen_mode()
                 || settings.names() == NameSetting::Hidden
@@ -201,10 +190,10 @@ fn main() {
 
             text.set_string(name);
 
-            let mut position = s.position();
+            let mut position = pos;
             let bounds = text.local_bounds();
             position.x -= bounds.width * 0.5;
-            position.y += s.radius() + bounds.height * 0.5;
+            position.y += radius + bounds.height * 0.5;
             text.set_position((position.x.round_ties_even(), position.y.round_ties_even()));
 
             window.draw(&text);

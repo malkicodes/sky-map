@@ -17,9 +17,6 @@ pub struct Star {
     pub(crate) mag: f32,
     pub(crate) spt: Option<(char, u8)>,
 
-    #[serde(skip_deserializing, default = "Star::default_color")]
-    graphical_color: Color,
-
     names: Option<StarNames>,
 }
 
@@ -38,18 +35,12 @@ struct StarNames {
 impl Star {
     pub const DEFAULT_COLOR: Color = Color::WHITE;
 
-    const fn default_color() -> Color {
-        Self::DEFAULT_COLOR
-    }
-
     pub fn apparent_magnitude(&self) -> f32 {
         self.mag
     }
 
     pub fn star_name(&self) -> String {
-        self.proper_name()
-            .or_else(|| self.bayerflamsteed_name())
-            .unwrap_or_else(|| self.hd_name())
+        self.simbad_id()
     }
 
     pub fn bayerflamsteed_name(&self) -> Option<String> {
@@ -149,7 +140,11 @@ impl Star {
     }
 
     pub fn graphical_color(&self) -> Color {
-        self.graphical_color
+        if let Some(col) = self.spt.and_then(|spt| spectral_to_rgb(spt)) {
+            col
+        } else {
+            Self::DEFAULT_COLOR
+        }
     }
 
     pub fn spherical_coordinates(&self) -> (f64, f64) {
@@ -223,22 +218,9 @@ fn spectral_to_rgb(spectral_type: (char, u8)) -> Option<Color> {
     Some(temperature_to_rgb(spectral_to_temperature(spectral_type)?))
 }
 
-fn add_color(star: &mut Star) -> bool {
-    if let Some(col) = star.spt.and_then(|spt| spectral_to_rgb(spt)) {
-        star.graphical_color = col;
-        true
-    } else {
-        false
-    }
-}
-
 pub fn load_stars() -> Vec<Star> {
     let mut stars: Vec<Star> = serde_json::from_str(include_str!("../assets/stars.json")).unwrap();
     stars.sort_by(|a, b| a.apparent_magnitude().total_cmp(&b.apparent_magnitude()));
-
-    for star in stars.iter_mut() {
-        add_color(star);
-    }
 
     stars
 }
