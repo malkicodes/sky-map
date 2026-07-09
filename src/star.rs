@@ -39,6 +39,10 @@ impl Star {
         self.mag
     }
 
+    pub fn hr(&self) -> Option<u16> {
+        self.names.as_ref()?.hr
+    }
+
     pub fn star_name(&self) -> String {
         self.proper_name()
             .or_else(|| self.bayerflamsteed_name())

@@ -108,20 +108,24 @@ pub fn load_constellations(star_data: &[Star]) -> Vec<Constellation> {
         let mut lines: Vec<[usize; 2]> = Vec::new();
 
         for path in constellation.lines {
-            for [target_a, target_b] in path
-                .array_windows::<2>()
-                .filter_map(|[a, b]| a.and_then(|a_hd| b.map(|b_hd| [a_hd, b_hd])))
-            {
-                if let [Some(a), Some(b)] = [target_a, target_b].map(|target_hd| {
-                    star_data
-                        .iter()
-                        .enumerate()
-                        .find(|(_, star)| star.hd == target_hd)
-                        .map(|(i, _)| i)
-                }) {
-                    lines.push([a, b]);
+            for line in path.array_windows::<2>() {
+                if let [Some(target_a), Some(target_b)] = line {
+                    if let [Some(a), Some(b)] = [target_a, target_b].map(|target_hd| {
+                        star_data
+                            .iter()
+                            .enumerate()
+                            .find(|(_, star)| star.hd.eq(target_hd))
+                            .map(|(i, _)| i)
+                    }) {
+                        lines.push([a, b]);
+                    } else {
+                        eprintln!("WARNING: Could not find stars {} - {}", target_a, target_b);
+                    }
                 } else {
-                    eprintln!("WARNING: Could not find stars {} - {}", target_a, target_b);
+                    eprintln!(
+                        "WARNING: Line {line:?} for constellation {} contains null",
+                        constellation.id
+                    )
                 }
             }
         }
