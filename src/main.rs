@@ -1,4 +1,4 @@
-use std::ops::{Neg, Range};
+use std::ops::Neg;
 
 use sfml::{
     graphics::{CircleShape, Color, Font, RenderTarget, RenderWindow, Shape, Text, Transformable},

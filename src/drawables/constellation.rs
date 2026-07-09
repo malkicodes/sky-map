@@ -1,4 +1,4 @@
-use std::{collections::HashSet, f64::consts::PI, fs::File};
+use std::{collections::HashSet, fs::File};
 
 use sfml::{
     SfResult,
