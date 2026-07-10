@@ -38,7 +38,6 @@ impl Constellation {
             star_info.push((star_i, (dec, ra)));
 
             if !seen_stars.contains(&star_i) {
-                println!("{:.6?}\t{:.6?}", ra, dec);
                 seen_stars.insert(star_i);
                 coords_sum += Vector3::new(ra.cos() * dec.cos(), ra.sin() * dec.cos(), dec.sin());
             }
@@ -137,17 +136,15 @@ mod constellation_data {
         pub(super) id: String,
         pub(super) name: String,
         pub(super) region: String,
-        pub(super) period: String,
         pub(super) constellations: Vec<ConstellationData>,
     }
 
     #[derive(Debug, Clone, Deserialize)]
     pub(super) struct ConstellationData {
         pub(super) id: String,
-        pub(super) names: Vec<ConstellationName>,
+        pub(super) name: ConstellationName,
         /// List of line strips to draw between HD stars
         pub(super) lines: Vec<Vec<Option<u32>>>,
-        pub(super) semantics: Vec<String>,
     }
 
     #[derive(Debug, Clone, Deserialize)]
@@ -178,7 +175,10 @@ pub fn load_constellations(star_data: &[Star]) -> Vec<Constellation> {
                     }) {
                         lines.push([a, b]);
                     } else {
-                        eprintln!("WARNING: Could not find stars {} - {}", target_a, target_b);
+                        eprintln!(
+                            "WARNING: Could not find stars {:>6} - {:<6} for {}",
+                            target_a, target_b, constellation.name.native
+                        );
                     }
                 } else {
                     eprintln!(
@@ -189,17 +189,8 @@ pub fn load_constellations(star_data: &[Star]) -> Vec<Constellation> {
             }
         }
 
-        let constellation = Constellation::new(
-            lines,
-            star_data,
-            constellation
-                .names
-                .first()
-                .expect("no constellation name")
-                .english
-                .clone(),
-        )
-        .expect("sfml error");
+        let constellation =
+            Constellation::new(lines, star_data, constellation.name.native).expect("sfml error");
 
         constellations.push(constellation);
     }

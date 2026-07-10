@@ -14,7 +14,7 @@ use sky_map::{
     SCREEN_SIZE, colors,
     drawables::{constellation::load_constellations, grid::Grid},
     rad_to_dms, rad_to_hms,
-    settings::{ConstellationSetting, DisplaySettings, NameSetting},
+    settings::{DisplaySettings, NameSetting},
     star::{Star, load_stars},
     view::View,
 };
@@ -196,8 +196,6 @@ fn main() {
 
                 window.draw(&text);
             }
-
-            eprintln!("Rendered {count} constellations");
 
             text.set_fill_color(Color::WHITE);
             text.set_character_size(12);
