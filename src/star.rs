@@ -1,3 +1,5 @@
+use std::fs::File;
+
 use arrayvec::ArrayString;
 use phf::phf_ordered_map;
 use serde::Deserialize;
@@ -7,12 +9,12 @@ use crate::{GREEK_LETTERS, SUBSCRIPT_CHARS, SUPERSCRIPT_CHARS};
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
 pub struct Star {
-    pub(crate) hd: u32,
+    pub(crate) hip: u32,
 
     /// Right ascension in hours, equinox J2000, epoch 2000.0
     pub(crate) ra: f64,
     /// Declination in degrees, equinox J2000, epoch 2000.0
-    pub(crate) de: f64,
+    pub(crate) dec: f64,
 
     pub(crate) mag: f32,
     pub(crate) spt: Option<(char, u8)>,
@@ -22,14 +24,12 @@ pub struct Star {
 
 #[derive(Deserialize, Debug, Default, Clone, PartialEq)]
 struct StarNames {
-    dm: ArrayString<12>,
-    gc: Option<u16>,
-    hr: Option<u16>,
-    hip: Option<u32>,
+    dm: ArrayString<10>,
+    hd: Option<u32>,
     fl: Option<u16>,
     bayer: Option<ArrayString<5>>,
-    prop: Option<ArrayString<28>>,
-    cst: ArrayString<3>,
+    prop: Option<ArrayString<36>>,
+    cst: Option<ArrayString<3>>,
 }
 
 impl Star {
@@ -39,14 +39,10 @@ impl Star {
         self.mag
     }
 
-    pub fn hr(&self) -> Option<u16> {
-        self.names.as_ref()?.hr
-    }
-
     pub fn star_name(&self) -> String {
         self.proper_name()
             .or_else(|| self.bayerflamsteed_name())
-            .unwrap_or_else(|| self.hd_name())
+            .unwrap_or_else(|| self.hip_name())
     }
 
     pub fn bayerflamsteed_name(&self) -> Option<String> {
@@ -101,32 +97,28 @@ impl Star {
 
     pub fn bayer_name(&self) -> Option<String> {
         match &self.names {
-            Some(names) => names
-                .bayer
-                .map(|bayer| format!("{} {}", Self::format_bayer(&bayer), names.cst)),
+            Some(names) => names.bayer.map(|bayer| {
+                format!(
+                    "{} {}",
+                    Self::format_bayer(&bayer),
+                    names.cst.expect("no cst with bayer")
+                )
+            }),
             None => None,
         }
     }
 
     pub fn flamsteed_name(&self) -> Option<String> {
         match &self.names {
-            Some(names) => names.fl.map(|number| format!("{number} {}", names.cst)),
+            Some(names) => names
+                .fl
+                .map(|number| format!("{number} {}", names.cst.expect("no cst with flamsteed"))),
             None => None,
         }
     }
 
-    pub fn hd_name(&self) -> String {
-        format!("HD {}", self.hd)
-    }
-
-    pub fn simbad_id(&self) -> String {
-        match &self.names {
-            Some(names) => names
-                .bayer
-                .map_or_else(|| names.fl.map(|n| n.to_string()), |b| Some(b.to_string()))
-                .map_or_else(|| self.hd_name(), |s| format!("* {s} {}", names.cst)),
-            None => self.hd_name(),
-        }
+    pub fn hip_name(&self) -> String {
+        format!("HIP {}", self.hip)
     }
 
     pub fn proper_name(&self) -> Option<String> {
@@ -155,7 +147,7 @@ impl Star {
 
     pub fn spherical_coordinates(&self) -> (f64, f64) {
         (
-            self.de * std::f64::consts::PI / 180.,
+            self.dec * std::f64::consts::PI / 180.,
             self.ra * std::f64::consts::PI / 12.,
         )
     }
@@ -225,7 +217,8 @@ fn spectral_to_rgb(spectral_type: (char, u8)) -> Option<Color> {
 }
 
 pub fn load_stars() -> Vec<Star> {
-    let mut stars: Vec<Star> = serde_json::from_str(include_str!("../assets/stars.json")).unwrap();
+    let mut stars: Vec<Star> =
+        ciborium::from_reader(File::open("./assets/stars.cbor").unwrap()).unwrap();
     stars.sort_by(|a, b| a.apparent_magnitude().total_cmp(&b.apparent_magnitude()));
 
     stars

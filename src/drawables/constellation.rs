@@ -143,7 +143,7 @@ mod constellation_data {
     pub(super) struct ConstellationData {
         pub(super) id: String,
         pub(super) name: ConstellationName,
-        /// List of line strips to draw between HD stars
+        /// List of line strips to draw between HIP stars
         pub(super) lines: Vec<Vec<Option<u32>>>,
     }
 
@@ -166,11 +166,11 @@ pub fn load_constellations(star_data: &[Star]) -> Vec<Constellation> {
         for path in constellation.lines {
             for line in path.array_windows::<2>() {
                 if let [Some(target_a), Some(target_b)] = line {
-                    if let [Some(a), Some(b)] = [target_a, target_b].map(|target_hd| {
+                    if let [Some(a), Some(b)] = [target_a, target_b].map(|target_hip| {
                         star_data
                             .iter()
                             .enumerate()
-                            .find(|(_, star)| star.hd.eq(target_hd))
+                            .find(|(_, star)| star.hip.eq(target_hip))
                             .map(|(i, _)| i)
                     }) {
                         lines.push([a, b]);

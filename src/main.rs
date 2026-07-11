@@ -35,14 +35,14 @@ fn update_star_names(
     for (star, name) in stars.iter().zip(star_names.iter_mut()) {
         *name = match display_settings.names() {
             NameSetting::Proper => star.star_name(),
-            NameSetting::BayerFlamsteed => {
-                star.bayerflamsteed_name().unwrap_or_else(|| star.hd_name())
-            }
-            NameSetting::HD => star.hd_name(),
+            NameSetting::BayerFlamsteed => star
+                .bayerflamsteed_name()
+                .unwrap_or_else(|| star.hip_name()),
+            NameSetting::HIP => star.hip_name(),
             NameSetting::Hidden => break,
         };
 
-        if display_settings.names() > NameSetting::HD && name.starts_with("HD") {
+        if display_settings.names() > NameSetting::HIP && name.starts_with("HIP") {
             name.clear();
         }
     }
@@ -174,14 +174,12 @@ fn main() {
 
             text.set_style(TextStyle::BOLD);
             text.set_character_size(16);
-            let mut count: u8 = 0;
 
             for cst in constellations.iter() {
                 if !cst.should_render() {
                     continue;
                 }
 
-                count += 1;
                 window.draw(cst);
 
                 let mut label_pos = view.project_to_screen(cst.centroid());
