@@ -32,6 +32,10 @@ impl Time {
         self.0 - Self::JD_EPOCH.mjd()
     }
 
+    pub const fn fract(&self) -> f64 {
+        self.0.fract()
+    }
+
     pub const fn days_since(&self, other: &Time) -> f64 {
         self.0 - other.0
     }

@@ -72,4 +72,4 @@ pub const SUBSCRIPT_CHARS: [char; 10] = ['₀', '₁', '₂', '₃', '₄', '₅
 pub mod settings;
 pub mod view;
 
-pub mod time;
+pub mod timeloc;
